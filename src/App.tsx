@@ -7,6 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import MockTests from "./pages/MockTests";
+import MockTestDetail from "./pages/MockTestDetail";
+import TestTaking from "./pages/TestTaking";
+import TestResults from "./pages/TestResults";
+import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +38,10 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/mock-tests" element={<MockTests />} />
+            <Route path="/mock-tests/:id" element={<MockTestDetail />} />
+            <Route path="/test-taking/:id" element={<TestTaking />} />
+            <Route path="/test-results/:id" element={<TestResults />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
