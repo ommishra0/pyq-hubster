@@ -1,26 +1,55 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { BookOpen, Menu, X, User, Moon, Sun } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { BookOpen, Menu, X, User, Moon, Sun, LogIn, LogOut, Award, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const { user, signOut, isAdmin } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
+    // Check if dark mode is enabled
+    setIsDarkMode(document.documentElement.classList.contains("dark"));
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    // Close mobile menu when route changes
+    setIsMobileMenuOpen(false);
+  }, [location]);
+
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.classList.toggle("dark");
+    
+    if (document.documentElement.classList.contains("dark")) {
+      localStorage.theme = "dark";
+    } else {
+      localStorage.theme = "light";
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -70,18 +99,60 @@ const Navbar = () => {
             )}
           </Button>
           
-          <Button variant="outline" asChild className="rounded-full">
-            <Link to="/admin" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span>Admin</span>
-            </Link>
-          </Button>
-          
-          <Button asChild className="rounded-full">
-            <Link to="/mock-tests">
-              Start Test
-            </Link>
-          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="rounded-full flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">Account</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/leaderboard">
+                    <Award className="mr-2 h-4 w-4" />
+                    <span>Leaderboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Admin Panel</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button variant="outline" asChild className="rounded-full">
+                <Link to="/login" className="flex items-center gap-2">
+                  <LogIn className="h-4 w-4" />
+                  <span>Login</span>
+                </Link>
+              </Button>
+              
+              <Button asChild className="rounded-full">
+                <Link to="/register">
+                  Register
+                </Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -150,22 +221,46 @@ const Navbar = () => {
           >
             Leaderboard
           </Link>
-          <Link 
-            to="/admin" 
-            className="w-full py-3 text-center text-lg font-medium"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Admin
-          </Link>
           
-          <Button asChild className="w-full mt-4 rounded-full">
+          {isAdmin && (
             <Link 
-              to="/mock-tests"
+              to="/admin" 
+              className="w-full py-3 text-center text-lg font-medium"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Start Test
+              Admin Panel
             </Link>
-          </Button>
+          )}
+          
+          {user ? (
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          ) : (
+            <>
+              <Link 
+                to="/login"
+                className="w-full py-3 text-center text-lg font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Login
+              </Link>
+              
+              <Button asChild className="w-full mt-4">
+                <Link 
+                  to="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Register
+                </Link>
+              </Button>
+            </>
+          )}
         </nav>
       </div>
     </header>
