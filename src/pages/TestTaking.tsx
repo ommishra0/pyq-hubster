@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -26,7 +26,6 @@ import { Progress } from "@/components/ui/progress";
 import { MOCK_TESTS } from "@/data/mockTests";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
-// Mock questions data
 const MOCK_QUESTIONS = [
   {
     id: 1,
@@ -37,7 +36,7 @@ const MOCK_QUESTIONS = [
       "v/r",
       "v²/r"
     ],
-    correctAnswer: 1, // Index of the correct option
+    correctAnswer: 1,
     explanation: "The magnitude of velocity is constant and equal to the speed v when moving in a circular path.",
     subject: "Physics",
     chapter: "Circular Motion",
@@ -120,27 +119,22 @@ const TestTaking = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [testSubmitted, setTestSubmitted] = useState(false);
 
-  // Use localStorage to save test progress
   const [savedAnswers, setSavedAnswers] = useLocalStorage(`test-${id}-answers`, userAnswers);
   const [savedMarked, setSavedMarked] = useLocalStorage(`test-${id}-marked`, markedForReview);
   const [savedTime, setSavedTime] = useLocalStorage(`test-${id}-time`, 0);
 
   useEffect(() => {
-    // Finding the test by ID
     const testId = parseInt(id || "0");
     const foundTest = MOCK_TESTS.find(test => test.id === testId);
     
     if (foundTest) {
       setTest(foundTest);
-      // Initialize timer with test duration
       setTimeLeft(foundTest.duration * 60);
       
-      // Try to restore saved progress
       if (savedAnswers.some(answer => answer !== null)) {
         setUserAnswers(savedAnswers);
         setMarkedForReview(savedMarked);
         
-        // Calculate remaining time
         const elapsedSeconds = savedTime;
         const remainingTime = Math.max(0, foundTest.duration * 60 - elapsedSeconds);
         setTimeLeft(remainingTime);
@@ -152,7 +146,6 @@ const TestTaking = () => {
       navigate("/mock-tests");
     }
     
-    // Start the timer
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         const newTime = prev - 1;
@@ -166,13 +159,11 @@ const TestTaking = () => {
       });
     }, 1000);
     
-    // Clean up timer
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [id, navigate, savedAnswers, savedMarked, savedTime, setSavedTime]);
 
-  // Save progress when answers change
   useEffect(() => {
     if (test && !testSubmitted) {
       setSavedAnswers(userAnswers);
@@ -228,15 +219,12 @@ const TestTaking = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     setTestSubmitted(true);
     
-    // Clear saved progress
     setSavedAnswers(Array(questions.length).fill(null));
     setSavedMarked(Array(questions.length).fill(false));
     setSavedTime(0);
     
-    // Calculate score
     const score = calculateScore();
     
-    // Store results
     const testResults = {
       testId: id,
       testTitle: test?.title,
@@ -249,12 +237,10 @@ const TestTaking = () => {
       date: new Date().toISOString()
     };
     
-    // Save results to localStorage
     const savedResults = JSON.parse(localStorage.getItem('testResults') || '[]');
     savedResults.push(testResults);
     localStorage.setItem('testResults', JSON.stringify(savedResults));
     
-    // Navigate to results page
     navigate(`/test-results/${id}`);
   };
 
@@ -299,7 +285,6 @@ const TestTaking = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/5 flex flex-col">
-      {/* Header with timer and controls */}
       <header className="py-4 px-6 bg-card shadow-sm border-b sticky top-0 z-10">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -340,7 +325,6 @@ const TestTaking = () => {
       </header>
       
       <main className="flex-grow container mx-auto px-4 md:px-6 py-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Question display */}
         <div className="md:col-span-3">
           <Card className="mb-6">
             <CardContent className="pt-6">
@@ -428,7 +412,6 @@ const TestTaking = () => {
           </div>
         </div>
         
-        {/* Question palette */}
         <div className="md:block">
           <div className="bg-card rounded-lg border p-4 sticky top-24">
             <h3 className="font-medium mb-4">Question Palette</h3>
@@ -482,7 +465,6 @@ const TestTaking = () => {
         </div>
       </main>
       
-      {/* Submit Test Dialog */}
       <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -524,7 +506,6 @@ const TestTaking = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Time's Up Dialog */}
       <Dialog open={isTimeupDialogOpen} onOpenChange={setIsTimeupDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -550,7 +531,6 @@ const TestTaking = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Quit Test Dialog */}
       <Dialog open={isQuitDialogOpen} onOpenChange={setIsQuitDialogOpen}>
         <DialogContent>
           <DialogHeader>
