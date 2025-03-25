@@ -124,9 +124,9 @@ const MOCK_TESTS = [
 
 const MockTests = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedSubject, setSelectedSubject] = useState("all");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [filteredTests, setFilteredTests] = useState(MOCK_TESTS);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -134,9 +134,9 @@ const MockTests = () => {
   useEffect(() => {
     const filtered = MOCK_TESTS.filter((test) => {
       const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType = selectedType === "" || test.type === selectedType;
-      const matchesSubject = selectedSubject === "" || test.subjects.includes(selectedSubject);
-      const matchesDifficulty = selectedDifficulty === "" || test.difficulty === selectedDifficulty;
+      const matchesType = selectedType === "all" || test.type === selectedType;
+      const matchesSubject = selectedSubject === "all" || test.subjects.includes(selectedSubject);
+      const matchesDifficulty = selectedDifficulty === "all" || test.difficulty === selectedDifficulty;
       
       return matchesSearch && matchesType && matchesSubject && matchesDifficulty;
     });
@@ -199,7 +199,7 @@ const MockTests = () => {
                     <SelectValue placeholder="Exam Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="JEE Main">JEE Main</SelectItem>
                     <SelectItem value="JEE Advanced">JEE Advanced</SelectItem>
                     <SelectItem value="NEET">NEET</SelectItem>
@@ -211,7 +211,7 @@ const MockTests = () => {
                     <SelectValue placeholder="Subject" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Subjects</SelectItem>
+                    <SelectItem value="all">All Subjects</SelectItem>
                     <SelectItem value="Physics">Physics</SelectItem>
                     <SelectItem value="Chemistry">Chemistry</SelectItem>
                     <SelectItem value="Mathematics">Mathematics</SelectItem>
@@ -224,7 +224,7 @@ const MockTests = () => {
                     <SelectValue placeholder="Difficulty" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Difficulties</SelectItem>
+                    <SelectItem value="all">All Difficulties</SelectItem>
                     <SelectItem value="Easy">Easy</SelectItem>
                     <SelectItem value="Medium">Medium</SelectItem>
                     <SelectItem value="Hard">Hard</SelectItem>
@@ -242,9 +242,9 @@ const MockTests = () => {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <FilterIcon className="h-4 w-4" />
                 <span>Filters Applied: {[
-                  selectedType && `Type: ${selectedType}`,
-                  selectedSubject && `Subject: ${selectedSubject}`,
-                  selectedDifficulty && `Difficulty: ${selectedDifficulty}`
+                  selectedType !== "all" && `Type: ${selectedType}`,
+                  selectedSubject !== "all" && `Subject: ${selectedSubject}`,
+                  selectedDifficulty !== "all" && `Difficulty: ${selectedDifficulty}`
                 ].filter(Boolean).join(', ') || 'None'}</span>
               </div>
             </div>
@@ -342,9 +342,9 @@ const MockTests = () => {
                   variant="outline" 
                   onClick={() => {
                     setSearchQuery("");
-                    setSelectedType("");
-                    setSelectedSubject("");
-                    setSelectedDifficulty("");
+                    setSelectedType("all");
+                    setSelectedSubject("all");
+                    setSelectedDifficulty("all");
                   }}
                 >
                   Clear Filters
