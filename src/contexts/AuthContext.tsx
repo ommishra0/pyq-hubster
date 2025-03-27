@@ -1,8 +1,9 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isUserAdmin } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +14,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isAdmin: boolean;
   forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,46 +24,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Check if user is admin
-      if (session?.user) {
-        checkIfAdmin(session.user);
-      }
-      
-      setIsLoading(false);
-    });
-
-    // Listen for auth changes
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Check if user is admin
-        if (session?.user) {
-          checkIfAdmin(session.user);
-        }
-        
-        setIsLoading(false);
+        setIsAdmin(isUserAdmin(session?.user?.email));
       }
     );
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsAdmin(isUserAdmin(session?.user?.email));
+      setIsLoading(false);
+    });
 
-  const checkIfAdmin = async (user: User) => {
-    // Check if user is admin (email is ommishra782725@hotmail.com)
-    setIsAdmin(user.email === 'ommishra782725@hotmail.com');
-  };
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -71,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        toast({
+        uiToast({
           title: "Login failed",
           description: error.message,
           variant: "destructive",
@@ -79,12 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return Promise.reject(error);
       }
       
-      toast({
-        title: "Login successful",
+      toast.success("Login successful", {
         description: "Welcome back!",
       });
     } catch (error: any) {
-      toast({
+      uiToast({
         title: "An error occurred",
         description: error.message,
         variant: "destructive",
@@ -106,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        toast({
+        uiToast({
           title: "Registration failed",
           description: error.message,
           variant: "destructive",
@@ -114,12 +97,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return Promise.reject(error);
       }
       
-      toast({
-        title: "Registration successful",
+      toast.success("Registration successful", {
         description: "Please check your email for verification link",
       });
     } catch (error: any) {
-      toast({
+      uiToast({
         title: "An error occurred",
         description: error.message,
         variant: "destructive",
@@ -135,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        toast({
+        uiToast({
           title: "Password reset failed",
           description: error.message,
           variant: "destructive",
@@ -143,12 +125,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return Promise.reject(error);
       }
       
-      toast({
-        title: "Password reset email sent",
+      toast.success("Password reset email sent", {
         description: "Please check your email for the password reset link",
       });
     } catch (error: any) {
-      toast({
+      uiToast({
+        title: "An error occurred",
+        description: error.message,
+        variant: "destructive",
+      });
+      return Promise.reject(error);
+    }
+  };
+
+  const resetPassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password
+      });
+      
+      if (error) {
+        uiToast({
+          title: "Password update failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return Promise.reject(error);
+      }
+      
+      toast.success("Password updated successfully", {
+        description: "You can now login with your new password",
+      });
+    } catch (error: any) {
+      uiToast({
         title: "An error occurred",
         description: error.message,
         variant: "destructive",
@@ -160,12 +169,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      toast({
-        title: "Logged out",
+      toast.success("Logged out", {
         description: "You have been successfully logged out",
       });
     } catch (error: any) {
-      toast({
+      uiToast({
         title: "An error occurred",
         description: error.message,
         variant: "destructive",
@@ -182,6 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     isAdmin,
     forgotPassword,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

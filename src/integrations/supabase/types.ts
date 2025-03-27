@@ -9,13 +9,245 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      mock_tests: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          difficulty: string
+          duration: number
+          id: string
+          is_active: boolean
+          subject: string
+          title: string
+          total_marks: number
+          total_questions: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          difficulty: string
+          duration: number
+          id?: string
+          is_active?: boolean
+          subject: string
+          title: string
+          total_marks: number
+          total_questions: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          difficulty?: string
+          duration?: number
+          id?: string
+          is_active?: boolean
+          subject?: string
+          title?: string
+          total_marks?: number
+          total_questions?: number
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          book_name: string | null
+          chapter: string | null
+          correct_option: string
+          created_at: string
+          created_by: string
+          explanation: string | null
+          id: string
+          marks: number
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          source_id: string | null
+          source_type: string
+          subject: string
+          year: number | null
+        }
+        Insert: {
+          book_name?: string | null
+          chapter?: string | null
+          correct_option: string
+          created_at?: string
+          created_by: string
+          explanation?: string | null
+          id?: string
+          marks?: number
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          source_id?: string | null
+          source_type: string
+          subject: string
+          year?: number | null
+        }
+        Update: {
+          book_name?: string | null
+          chapter?: string | null
+          correct_option?: string
+          created_at?: string
+          created_by?: string
+          explanation?: string | null
+          id?: string
+          marks?: number
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          question_text?: string
+          source_id?: string | null
+          source_type?: string
+          subject?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
+      test_attempts: {
+        Row: {
+          completed_at: string
+          correct_answers: number
+          id: string
+          percentage: number
+          score: number
+          test_id: string
+          time_taken: number
+          total_marks: number
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          correct_answers: number
+          id?: string
+          percentage: number
+          score: number
+          test_id: string
+          time_taken: number
+          total_marks: number
+          total_questions: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          correct_answers?: number
+          id?: string
+          percentage?: number
+          score?: number
+          test_id?: string
+          time_taken?: number
+          total_marks?: number
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_attempts_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "mock_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_answers: {
+        Row: {
+          attempt_id: string
+          id: string
+          is_correct: boolean
+          marks_obtained: number
+          question_id: string
+          selected_option: string | null
+        }
+        Insert: {
+          attempt_id: string
+          id?: string
+          is_correct: boolean
+          marks_obtained: number
+          question_id: string
+          selected_option?: string | null
+        }
+        Update: {
+          attempt_id?: string
+          id?: string
+          is_correct?: boolean
+          marks_obtained?: number
+          question_id?: string
+          selected_option?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "test_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_scores: {
+        Row: {
+          average_score: number
+          correct_answers: number
+          id: string
+          last_rank_change: string | null
+          rank_position: number | null
+          tests_taken: number
+          total_points: number
+          total_questions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_score?: number
+          correct_answers?: number
+          id?: string
+          last_rank_change?: string | null
+          rank_position?: number | null
+          tests_taken?: number
+          total_points?: number
+          total_questions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_score?: number
+          correct_answers?: number
+          id?: string
+          last_rank_change?: string | null
+          rank_position?: number | null
+          tests_taken?: number
+          total_points?: number
+          total_questions?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_user_rankings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

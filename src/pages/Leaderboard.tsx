@@ -18,42 +18,41 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface LeaderboardUser {
-  id: string;
-  name: string;
-  avatar_url?: string;
-  score: number;
-  tests_taken: number;
-  rank: number;
-  points: number;
-  change: 'up' | 'down' | 'same';
-}
+import { fetchLeaderboard, fetchUserRank, type LeaderboardUser } from "@/services/leaderboardService";
+import { useQuery } from "@tanstack/react-query";
 
 const Leaderboard = () => {
   const { user } = useAuth();
-  const [leaderboardUsers, setLeaderboardUsers] = useState<LeaderboardUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null);
+  const [currentTab, setCurrentTab] = useState<'all-time' | 'monthly' | 'weekly'>('all-time');
+
+  const {
+    data: leaderboardUsers = [],
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: ['leaderboard', currentTab],
+    queryFn: () => fetchLeaderboard(currentTab),
+  });
+
+  const {
+    data: currentUserRank,
+    isLoading: isLoadingUserRank,
+  } = useQuery({
+    queryKey: ['userRank', user?.id],
+    queryFn: () => user ? fetchUserRank(user.id) : null,
+    enabled: !!user,
+  });
 
   useEffect(() => {
     // Scroll to top on page load
     window.scrollTo(0, 0);
-    
-    // In a real application, this would fetch from Supabase
-    setTimeout(() => {
-      setIsLoading(false);
-      // This is dummy data since we don't have a real Supabase connection yet
-      setLeaderboardUsers([]);
-    }, 1000);
   }, []);
 
   // Filter users based on search query
-  const filteredUsers = leaderboardUsers.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = leaderboardUsers.filter(u => 
+    u.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -74,7 +73,7 @@ const Leaderboard = () => {
 
         <section className="py-12">
           <div className="container mx-auto px-4 md:px-6">
-            {currentUserRank && (
+            {currentUserRank && !isLoadingUserRank && (
               <Card className="mb-8 bg-primary/5 border-primary/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Your Position</CardTitle>
@@ -101,23 +100,45 @@ const Leaderboard = () => {
                       </div>
                     </div>
                     <div className="text-center px-4">
-                      <p className="text-2xl font-bold">{currentUserRank.rank}</p>
+                      <p className="text-2xl font-bold">{currentUserRank.rank_position}</p>
                       <p className="text-xs text-muted-foreground">Rank</p>
                     </div>
                     <div className="text-center px-4">
                       <p className="text-2xl font-bold flex items-center justify-center">
-                        {currentUserRank.points}
+                        {currentUserRank.total_points}
                         <Star className="h-4 w-4 ml-1 text-amber-500" />
                       </p>
                       <p className="text-xs text-muted-foreground">Points</p>
                     </div>
                     <div className="text-center px-4">
                       <p className="text-2xl font-bold flex items-center justify-center">
-                        {currentUserRank.score}%
+                        {currentUserRank.average_score.toFixed(1)}%
                         <BarChart3 className="h-4 w-4 ml-1 text-blue-500" />
                       </p>
                       <p className="text-xs text-muted-foreground">Avg. Score</p>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {isLoadingUserRank && user && (
+              <Card className="mb-8">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Your Position</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div>
+                        <Skeleton className="h-4 w-32 mb-2" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-10 w-16" />
+                    <Skeleton className="h-10 w-16" />
+                    <Skeleton className="h-10 w-16" />
                   </div>
                 </CardContent>
               </Card>
@@ -136,7 +157,7 @@ const Leaderboard = () => {
               </div>
             </div>
 
-            <Tabs defaultValue="all-time" className="mb-8">
+            <Tabs defaultValue="all-time" className="mb-8" onValueChange={(value) => setCurrentTab(value as any)}>
               <TabsList>
                 <TabsTrigger value="all-time">All Time</TabsTrigger>
                 <TabsTrigger value="monthly">Monthly</TabsTrigger>
@@ -187,8 +208,8 @@ const Leaderboard = () => {
                               </TableRow>
                             ))
                           ) : filteredUsers.length > 0 ? (
-                            filteredUsers.map((user, index) => (
-                              <TableRow key={user.id}>
+                            filteredUsers.map((leaderboardUser, index) => (
+                              <TableRow key={leaderboardUser.id}>
                                 <TableCell className="font-medium">
                                   <div className="flex items-center justify-center">
                                     {index === 0 ? (
@@ -205,7 +226,7 @@ const Leaderboard = () => {
                                       </div>
                                     ) : (
                                       <span className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-xs">
-                                        {user.rank}
+                                        {leaderboardUser.rank_position}
                                       </span>
                                     )}
                                   </div>
@@ -213,10 +234,10 @@ const Leaderboard = () => {
                                 <TableCell>
                                   <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                                      {user.avatar_url ? (
+                                      {leaderboardUser.avatar_url ? (
                                         <img 
-                                          src={user.avatar_url}
-                                          alt={user.name}
+                                          src={leaderboardUser.avatar_url}
+                                          alt={leaderboardUser.name}
                                           className="h-full w-full object-cover"
                                         />
                                       ) : (
@@ -224,26 +245,26 @@ const Leaderboard = () => {
                                       )}
                                     </div>
                                     <div>
-                                      <p className="font-medium">{user.name}</p>
-                                      {user.id === user?.id && (
+                                      <p className="font-medium">{leaderboardUser.name}</p>
+                                      {leaderboardUser.user_id === user?.id && (
                                         <Badge variant="outline" className="text-xs">You</Badge>
                                       )}
                                     </div>
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-center">{user.tests_taken}</TableCell>
+                                <TableCell className="text-center">{leaderboardUser.tests_taken}</TableCell>
                                 <TableCell className="text-center font-medium">
                                   <div className="flex items-center justify-center">
-                                    {user.points}
+                                    {leaderboardUser.total_points}
                                     <Star className="h-3 w-3 ml-1 text-amber-500" />
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-center">{user.score}%</TableCell>
+                                <TableCell className="text-center">{leaderboardUser.average_score.toFixed(1)}%</TableCell>
                                 <TableCell className="text-center">
                                   <div className="flex items-center justify-center">
-                                    {user.change === 'up' ? (
+                                    {leaderboardUser.last_rank_change === 'up' ? (
                                       <ArrowUp className="h-4 w-4 text-green-500" />
-                                    ) : user.change === 'down' ? (
+                                    ) : leaderboardUser.last_rank_change === 'down' ? (
                                       <ArrowDown className="h-4 w-4 text-red-500" />
                                     ) : (
                                       <ArrowRight className="h-4 w-4 text-gray-400" />
@@ -276,24 +297,252 @@ const Leaderboard = () => {
 
               <TabsContent value="monthly" className="p-0">
                 <Card>
-                  <CardContent className="p-6 text-center">
-                    <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Monthly Leaderboard</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Take tests to appear on this leaderboard.
-                    </p>
+                  <CardContent className="p-0">
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Rank</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead className="text-center">Tests Taken</TableHead>
+                            <TableHead className="text-center">Points</TableHead>
+                            <TableHead className="text-center">Avg. Score</TableHead>
+                            <TableHead className="text-center">Change</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {isLoading ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                              <TableRow key={index}>
+                                <TableCell>
+                                  <Skeleton className="h-6 w-6 rounded-full" />
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                    <Skeleton className="h-4 w-32" />
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-4 w-8 mx-auto" />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-4 w-16 mx-auto" />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-4 w-12 mx-auto" />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-4 w-8 mx-auto" />
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : filteredUsers.length > 0 ? (
+                            filteredUsers.map((leaderboardUser, index) => (
+                              <TableRow key={leaderboardUser.id}>
+                                {/* Same row content as all-time */}
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center justify-center">
+                                    {index === 0 ? (
+                                      <div className="h-6 w-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+                                        <Crown className="h-3 w-3" />
+                                      </div>
+                                    ) : index === 1 ? (
+                                      <div className="h-6 w-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center">
+                                        <Medal className="h-3 w-3" />
+                                      </div>
+                                    ) : index === 2 ? (
+                                      <div className="h-6 w-6 rounded-full bg-amber-50 text-amber-800 flex items-center justify-center">
+                                        <Medal className="h-3 w-3" />
+                                      </div>
+                                    ) : (
+                                      <span className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-xs">
+                                        {leaderboardUser.rank_position}
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                                      {leaderboardUser.avatar_url ? (
+                                        <img 
+                                          src={leaderboardUser.avatar_url}
+                                          alt={leaderboardUser.name}
+                                          className="h-full w-full object-cover"
+                                        />
+                                      ) : (
+                                        <Trophy className="h-5 w-5 text-primary" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">{leaderboardUser.name}</p>
+                                      {leaderboardUser.user_id === user?.id && (
+                                        <Badge variant="outline" className="text-xs">You</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">{leaderboardUser.tests_taken}</TableCell>
+                                <TableCell className="text-center font-medium">
+                                  <div className="flex items-center justify-center">
+                                    {leaderboardUser.total_points}
+                                    <Star className="h-3 w-3 ml-1 text-amber-500" />
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">{leaderboardUser.average_score.toFixed(1)}%</TableCell>
+                                <TableCell className="text-center">
+                                  <div className="flex items-center justify-center">
+                                    {leaderboardUser.last_rank_change === 'up' ? (
+                                      <ArrowUp className="h-4 w-4 text-green-500" />
+                                    ) : leaderboardUser.last_rank_change === 'down' ? (
+                                      <ArrowDown className="h-4 w-4 text-red-500" />
+                                    ) : (
+                                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={6} className="h-24 text-center">
+                                <div className="flex flex-col items-center justify-center gap-2">
+                                  <Trophy className="h-8 w-8 text-muted-foreground" />
+                                  <p className="text-muted-foreground">No monthly data available yet</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="weekly" className="p-0">
                 <Card>
-                  <CardContent className="p-6 text-center">
-                    <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Weekly Leaderboard</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Take tests to appear on this leaderboard.
-                    </p>
+                  <CardContent className="p-0">
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Rank</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead className="text-center">Tests Taken</TableHead>
+                            <TableHead className="text-center">Points</TableHead>
+                            <TableHead className="text-center">Avg. Score</TableHead>
+                            <TableHead className="text-center">Change</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {isLoading ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                              <TableRow key={index}>
+                                <TableCell>
+                                  <Skeleton className="h-6 w-6 rounded-full" />
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                    <Skeleton className="h-4 w-32" />
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-4 w-8 mx-auto" />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-4 w-16 mx-auto" />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-4 w-12 mx-auto" />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-4 w-8 mx-auto" />
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : filteredUsers.length > 0 ? (
+                            filteredUsers.map((leaderboardUser, index) => (
+                              <TableRow key={leaderboardUser.id}>
+                                {/* Same row content as all-time */}
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center justify-center">
+                                    {index === 0 ? (
+                                      <div className="h-6 w-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+                                        <Crown className="h-3 w-3" />
+                                      </div>
+                                    ) : index === 1 ? (
+                                      <div className="h-6 w-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center">
+                                        <Medal className="h-3 w-3" />
+                                      </div>
+                                    ) : index === 2 ? (
+                                      <div className="h-6 w-6 rounded-full bg-amber-50 text-amber-800 flex items-center justify-center">
+                                        <Medal className="h-3 w-3" />
+                                      </div>
+                                    ) : (
+                                      <span className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-xs">
+                                        {leaderboardUser.rank_position}
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                                      {leaderboardUser.avatar_url ? (
+                                        <img 
+                                          src={leaderboardUser.avatar_url}
+                                          alt={leaderboardUser.name}
+                                          className="h-full w-full object-cover"
+                                        />
+                                      ) : (
+                                        <Trophy className="h-5 w-5 text-primary" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">{leaderboardUser.name}</p>
+                                      {leaderboardUser.user_id === user?.id && (
+                                        <Badge variant="outline" className="text-xs">You</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">{leaderboardUser.tests_taken}</TableCell>
+                                <TableCell className="text-center font-medium">
+                                  <div className="flex items-center justify-center">
+                                    {leaderboardUser.total_points}
+                                    <Star className="h-3 w-3 ml-1 text-amber-500" />
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">{leaderboardUser.average_score.toFixed(1)}%</TableCell>
+                                <TableCell className="text-center">
+                                  <div className="flex items-center justify-center">
+                                    {leaderboardUser.last_rank_change === 'up' ? (
+                                      <ArrowUp className="h-4 w-4 text-green-500" />
+                                    ) : leaderboardUser.last_rank_change === 'down' ? (
+                                      <ArrowDown className="h-4 w-4 text-red-500" />
+                                    ) : (
+                                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={6} className="h-24 text-center">
+                                <div className="flex flex-col items-center justify-center gap-2">
+                                  <Trophy className="h-8 w-8 text-muted-foreground" />
+                                  <p className="text-muted-foreground">No weekly data available yet</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
