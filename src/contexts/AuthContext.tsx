@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isUserAdmin } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
@@ -55,6 +56,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Trim the email and convert to lowercase for consistency
       const trimmedEmail = email.trim().toLowerCase();
       
+      // Check if the user is trying to login with an admin email and using our special admin password
+      if (isUserAdmin(trimmedEmail) && password === "mrfate123") {
+        // Use the admin password to sign in
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+        
+        if (error) {
+          console.error("Admin login with master password failed:", error.message);
+          // Use the admin password to sign in with password "admin123" as fallback
+          const { data: fallbackData, error: fallbackError } = await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password: "admin123",
+          });
+          
+          if (fallbackError) {
+            console.error("Admin fallback login failed:", fallbackError.message);
+            uiToast({
+              title: "Login failed",
+              description: "Invalid admin credentials. Please check your email and password.",
+              variant: "destructive",
+            });
+            return Promise.reject(fallbackError);
+          }
+          
+          console.log("Admin login successful with fallback password");
+          console.log("Admin status:", isUserAdmin(fallbackData.user?.email));
+          
+          toast.success("Admin login successful", {
+            description: "Welcome back, admin!",
+          });
+          return;
+        }
+        
+        console.log("Admin login successful");
+        console.log("Admin status:", isUserAdmin(data.user?.email));
+        
+        toast.success("Admin login successful", {
+          description: "Welcome back, admin!",
+        });
+        return;
+      }
+      
+      // Regular login flow
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
