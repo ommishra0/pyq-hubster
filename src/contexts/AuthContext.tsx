@@ -12,6 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  forgotPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,8 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const checkIfAdmin = async (user: User) => {
-    // Check if user is admin (email is ommishra@gmail.com)
-    setIsAdmin(user.email === 'ommishra@gmail.com');
+    // Check if user is admin (email is ommishra782725@hotmail.com)
+    setIsAdmin(user.email === 'ommishra782725@hotmail.com');
   };
 
   const signIn = async (email: string, password: string) => {
@@ -127,6 +128,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const forgotPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        toast({
+          title: "Password reset failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return Promise.reject(error);
+      }
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Please check your email for the password reset link",
+      });
+    } catch (error: any) {
+      toast({
+        title: "An error occurred",
+        description: error.message,
+        variant: "destructive",
+      });
+      return Promise.reject(error);
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -151,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signOut,
     isAdmin,
+    forgotPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

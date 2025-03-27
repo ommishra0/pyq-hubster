@@ -12,6 +12,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import MockTests from "./pages/MockTests";
 import MockTestDetail from "./pages/MockTestDetail";
 import TestTaking from "./pages/TestTaking";
@@ -56,6 +57,7 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               
               {/* Protected routes (require authentication) */}
