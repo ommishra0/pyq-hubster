@@ -27,8 +27,7 @@ export const fetchLeaderboard = async (period: 'all-time' | 'monthly' | 'weekly'
         average_score,
         rank_position,
         last_rank_change,
-        updated_at,
-        auth.users (email, raw_user_meta_data)
+        updated_at
       `)
       .order('rank_position', { ascending: true });
 
@@ -50,12 +49,23 @@ export const fetchLeaderboard = async (period: 'all-time' | 'monthly' | 'weekly'
       return [];
     }
 
+    // Get current user session to access user metadata if available
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUser = session?.user;
+
     return (data || []).map(item => {
-      const userData = item.users as any;
+      // Generate a display name for each user
+      let displayName = `User-${item.user_id.substring(0, 6)}`;
+      
+      // If this is the current user, use their metadata
+      if (currentUser && currentUser.id === item.user_id && currentUser.user_metadata?.name) {
+        displayName = currentUser.user_metadata.name;
+      }
+
       return {
         id: item.id,
         user_id: item.user_id,
-        name: userData?.raw_user_meta_data?.name || userData?.email || 'Anonymous User',
+        name: displayName,
         total_points: item.total_points,
         tests_taken: item.tests_taken,
         rank_position: item.rank_position || 0,
@@ -83,8 +93,7 @@ export const fetchUserRank = async (userId: string): Promise<LeaderboardUser | n
         average_score,
         rank_position,
         last_rank_change,
-        updated_at,
-        auth.users (email, raw_user_meta_data)
+        updated_at
       `)
       .eq('user_id', userId)
       .single();
@@ -96,12 +105,22 @@ export const fetchUserRank = async (userId: string): Promise<LeaderboardUser | n
 
     if (!data) return null;
 
-    const userData = data.users as any;
+    // Get current user session to access user metadata if available
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUser = session?.user;
+    
+    // Generate a display name
+    let displayName = `User-${data.user_id.substring(0, 6)}`;
+    
+    // If this is the current user, use their metadata
+    if (currentUser && currentUser.id === data.user_id && currentUser.user_metadata?.name) {
+      displayName = currentUser.user_metadata.name;
+    }
     
     return {
       id: data.id,
       user_id: data.user_id,
-      name: userData?.raw_user_meta_data?.name || userData?.email || 'Anonymous User',
+      name: displayName,
       total_points: data.total_points,
       tests_taken: data.tests_taken,
       rank_position: data.rank_position || 0,

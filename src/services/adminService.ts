@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 
 export interface UserData {
@@ -42,41 +41,36 @@ export interface QuestionData {
 // Admin Users
 export const fetchAllUsers = async (): Promise<UserData[]> => {
   try {
-    const { data: users, error: usersError } = await supabase
-      .from('auth.users')
-      .select('id, email, created_at, raw_user_meta_data');
+    // First, get all user_scores to get user data and scores
+    const { data: scores, error } = await supabase
+      .from('user_scores')
+      .select('*')
+      .order('rank_position', { ascending: true, nullsLast: true });
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
+    if (error) {
+      console.error('Error fetching user scores:', error);
       return [];
     }
 
-    const { data: scores, error: scoresError } = await supabase
-      .from('user_scores')
-      .select('user_id, tests_taken, total_points');
+    // Get the session to access the current user's information for admin-only operations
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUser = session?.user;
 
-    if (scoresError) {
-      console.error('Error fetching user scores:', scoresError);
-    }
-
-    const scoresMap = new Map();
-    scores?.forEach(score => {
-      scoresMap.set(score.user_id, {
-        tests_taken: score.tests_taken,
-        points: score.total_points
-      });
-    });
-
-    return (users || []).map(user => {
-      const userScore = scoresMap.get(user.id) || { tests_taken: 0, points: 0 };
+    // Build user data from scores, with metadata from the current user if it's an admin
+    return (scores || []).map(score => {
+      // If this is the current user, we can include their email
+      const isCurrentUser = currentUser?.id === score.user_id;
+      
       return {
-        id: user.id,
-        email: user.email,
-        name: user.raw_user_meta_data?.name || 'Unnamed User',
-        tests_taken: userScore.tests_taken,
-        points: userScore.points,
+        id: score.user_id,
+        email: isCurrentUser ? currentUser.email || 'Unknown Email' : 'User Email Hidden',
+        name: isCurrentUser && currentUser.user_metadata?.name ? 
+              currentUser.user_metadata.name : 
+              `User-${score.user_id.substring(0, 6)}`,
+        tests_taken: score.tests_taken,
+        points: score.total_points,
         status: 'active',
-        created_at: user.created_at
+        created_at: score.updated_at
       };
     });
   } catch (error) {
