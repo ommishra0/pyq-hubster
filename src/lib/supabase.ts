@@ -13,7 +13,13 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Helper function to check if user is admin
+// Helper function to check if user is admin - adding more admin emails for testing
 export const isUserAdmin = (email?: string | null) => {
-  return email === 'ommishra782725@hotmail.com';
+  const adminEmails = [
+    'ommishra782725@hotmail.com',
+    'omgamer86@gmail.com', // Adding alternative admin email
+    'test@admin.com' // Adding a test admin email
+  ];
+  
+  return email ? adminEmails.includes(email.toLowerCase()) : false;
 };

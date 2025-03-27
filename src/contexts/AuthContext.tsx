@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isUserAdmin } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
@@ -30,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        console.log("Auth state changed:", _event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setIsAdmin(isUserAdmin(session?.user?.email));
@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setIsAdmin(isUserAdmin(session?.user?.email));
@@ -49,12 +50,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log("Attempting login with:", email);
+      
+      // Trim the email and convert to lowercase for consistency
+      const trimmedEmail = email.trim().toLowerCase();
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
         password,
       });
       
       if (error) {
+        console.error("Login error:", error.message);
         uiToast({
           title: "Login failed",
           description: error.message,
@@ -63,10 +70,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return Promise.reject(error);
       }
       
+      console.log("Login successful, user:", data.user?.email);
+      console.log("Admin status:", isUserAdmin(data.user?.email));
+      
       toast.success("Login successful", {
         description: "Welcome back!",
       });
     } catch (error: any) {
+      console.error("Unexpected login error:", error.message);
       uiToast({
         title: "An error occurred",
         description: error.message,
