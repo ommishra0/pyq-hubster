@@ -20,6 +20,7 @@ import TestTaking from "./pages/TestTaking";
 import TestResults from "./pages/TestResults";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -57,6 +58,7 @@ const App = () => {
               {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />

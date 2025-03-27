@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
@@ -27,7 +27,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-const Login = () => {
+const AdminLogin = () => {
   const { signIn, user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -42,13 +42,12 @@ const Login = () => {
   });
 
   useEffect(() => {
-    // Redirect if user is already logged in
-    if (user) {
-      if (isAdmin) {
-        navigate("/admin");
-      } else {
-        navigate("/mock-tests");
-      }
+    // Redirect if user is already logged in as admin
+    if (user && isAdmin) {
+      navigate("/admin");
+    } else if (user && !isAdmin) {
+      // If logged in but not admin, redirect to regular pages
+      navigate("/mock-tests");
     }
   }, [user, isAdmin, navigate]);
 
@@ -58,7 +57,7 @@ const Login = () => {
       await signIn(values.email, values.password);
       // No need to navigate here as useEffect will handle it
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Admin login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -71,11 +70,11 @@ const Login = () => {
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <div className="flex justify-center mb-2">
-              <BookOpen className="h-12 w-12 text-primary" />
+              <Shield className="h-12 w-12 text-primary" />
             </div>
-            <CardTitle className="text-2xl text-center">Log in to PYQ Hub</CardTitle>
+            <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
             <CardDescription className="text-center">
-              Enter your email and password to access your account
+              Enter your admin credentials to access the dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -86,11 +85,11 @@ const Login = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Admin Email</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                          <Input placeholder="you@example.com" className="pl-10" {...field} />
+                          <Input placeholder="admin@example.com" className="pl-10" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -102,7 +101,7 @@ const Login = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>Admin Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -123,35 +122,21 @@ const Login = () => {
                           </Button>
                         </div>
                       </FormControl>
-                      <div className="flex justify-end">
-                        <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                          Forgot password?
-                        </Link>
-                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Logging in..." : "Log in"}
+                  {isLoading ? "Logging in..." : "Log in as Admin"}
                 </Button>
               </form>
             </Form>
+            
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              <p>Use the admin password: "mrfate123"</p>
+              <p className="mt-1">For admins only - regular users should use the <a href="/login" className="text-primary hover:underline">regular login</a></p>
+            </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-2">
-            <div className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link to="/register" className="text-primary underline-offset-4 hover:underline">
-                Register
-              </Link>
-            </div>
-            <div className="text-center text-sm text-muted-foreground mt-2">
-              <Link to="/admin-login" className="flex items-center justify-center text-primary underline-offset-4 hover:underline">
-                <Shield className="h-4 w-4 mr-1" />
-                Admin Login
-              </Link>
-            </div>
-          </CardFooter>
         </Card>
       </main>
       <Footer />
@@ -159,4 +144,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default AdminLogin;

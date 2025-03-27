@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Menu, X, User, Moon, Sun, LogIn, LogOut, Award, Settings } from "lucide-react";
+import { BookOpen, Menu, X, User, Moon, Sun, LogIn, LogOut, Award, Settings, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -151,6 +151,13 @@ const Navbar = () => {
                   Register
                 </Link>
               </Button>
+              
+              <Button variant="secondary" asChild className="rounded-full">
+                <Link to="/admin-login" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span>Admin</span>
+                </Link>
+              </Button>
             </>
           )}
         </div>
@@ -229,6 +236,17 @@ const Navbar = () => {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Admin Panel
+            </Link>
+          )}
+          
+          {!user && (
+            <Link 
+              to="/admin-login" 
+              className="w-full py-3 text-center text-lg font-medium flex items-center justify-center"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              Admin Login
             </Link>
           )}
           
