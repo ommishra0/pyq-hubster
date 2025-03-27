@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 
 export interface UserData {
@@ -45,7 +46,7 @@ export const fetchAllUsers = async (): Promise<UserData[]> => {
     const { data: scores, error } = await supabase
       .from('user_scores')
       .select('*')
-      .order('rank_position', { ascending: true, nullsLast: true });
+      .order('rank_position', { ascending: true });
 
     if (error) {
       console.error('Error fetching user scores:', error);
