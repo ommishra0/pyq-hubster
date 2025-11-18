@@ -53,7 +53,3 @@ npm i
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/4f37baf4-4f67-4d2f-ae26-a7cd25397c51) and click on Share -> Publish.
