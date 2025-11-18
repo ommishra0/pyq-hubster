@@ -5,7 +5,6 @@ PYQ Hub is a comprehensive preparation platform for JEE Main, JEE Advanced, and 
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/4f37baf4-4f67-4d2f-ae26-a7cd25397c51
 
 ## Features
 
@@ -30,8 +29,6 @@ PYQ Hub is a comprehensive preparation platform for JEE Main, JEE Advanced, and 
 There are several ways of editing your application.
 
 **Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/4f37baf4-4f67-4d2f-ae26-a7cd25397c51) and start prompting.
 
 Changes made via Lovable will be committed automatically to this repo.
 
